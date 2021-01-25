@@ -19,9 +19,10 @@ The genome sequence (fasta) and annotation (gff) are also needed. We analysed th
 **Note:** upload the models and scripts to the repository and add links to them.
 
 **Other files:**
+[Diretrizes de contribuição para este projeto](docs/CONTRIBUTING.md)
 1. Models for TSSFinder:
-   * *A. thaliana*: `/projects/mauro/TSSFinder/articleData/athaliana/models/athaliana.0`
-   * *O. sativa*: `/projects/mauro/TSSFinder/articleData/osativa/models/osativa.0`
+   * [A. thaliana](resources/TSSFinder_models/athaliana)
+   * [O. sativa](resources/TSSFinder_models/osativa)
 2. Bedfile containing the start positions of the target genes
 ```bash
 # filter gff file to get only the gene entries
