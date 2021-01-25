@@ -84,14 +84,14 @@ mv promoters_800nt.fa.new promoters_800nt.fa
 
 # 3. Scan promoters for motif occurences
 ## 3.1 Obtain the background model for your sequences
-Here we will be using the CreateBackgroundModel software followed by the conversion of its output to the MEME background format
+Here we will be using the CreateBackgroundModel software followed by the conversion of its output to the MEME background format with a [python script](resources/convert_bgmodel.py)
 ```bash
 nohup time CreateBackgroundModel \
 -f promoters_800nt.fa \
 -b background_model > log.create_background_model.txt &
 
 # convert to MEME format
-python3 SCRIPT -f background_model
+python3 convert_bgmodel.py -f background_model
 ```
 ## 3.2 Scan sequences
 We used the JASPAR CORE Plants
