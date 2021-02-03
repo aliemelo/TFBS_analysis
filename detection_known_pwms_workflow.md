@@ -88,7 +88,12 @@ mv promoters_800nt.fa.new promoters_800nt.fa
 
 # 3. Scan promoters for motif occurences
 ## 3.1 Obtain the background model for your sequences
-Here we will be using the CreateBackgroundModel software followed by the conversion of its output to the MEME background format with a [python script](resources/convert_bgmodel.py)
+Here we will be using the fasta-get-markov script from the MEME Suite:
+```bash
+fasta-get-markov promoters_800nt.fa background_model.meme_format
+```
+
+Alternatively, we can use the CreateBackgroundModel software followed by the conversion of its output to the MEME background format with a [python script](resources/convert_bgmodel.py)
 ```bash
 nohup time CreateBackgroundModel \
 -f promoters_800nt.fa \
