@@ -58,8 +58,11 @@ bedtools getfasta -name -s -fi <GENOME> -bed promoters_800nt.bed -fo promoters_8
 ```
 Remove sequences shorter than 100 nt
 ```bash
-awk 'BEGIN {RS = ">" ; ORS = ""} length($2) >= 100 {print ">"$0}' promoters_800nt.fa.tmp > promoters_800nt.fa
+awk -v RS=">" -v FS="\n" '{for(i=2;i<NF;i++) {l+=length($i)}; if(l>100) printf ">%s", $0}' promoters_800nt.fa.tmp > promoters_800nt.fa
 ```
+Alternatively, you can use 'seqtk':
+```bash
+seqtk seq -L 100 promoters_800nt.fa.tmp > promoters_800nt.fa```
 
 > :heavy_exclamation_mark: If your FASTA IDs are too long, you might need to shorten them to only show the gene's name (as opposed to the whole description of that gene).
 ```bash
