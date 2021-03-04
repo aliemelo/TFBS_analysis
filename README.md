@@ -17,14 +17,14 @@ Our full analysis can be executed using the map_motifs.sh script as follows:
 -c CHROMOSOME_SIZES
 ```
 
-| Option        | Description   |
-| ------------- |:-------------:|
+| Option | Description |
+| --- | --- |
 | -i | File containing the names of the target genes, one per line |
 | -b | Genome annotation file in GFF format |
 | -g | Genome file in FASTA format |
 | -c | File defining the length of each chromosome separated by tab |
 
-For a more in depth description of the steps for this analysis, you can check out [this page](detection_known_pwms_workflow.md)
+For a more in depth description of the steps used for this analysis as well as the dependencies required to run the script, check out [this page](detection_known_pwms_workflow.md).
 
 
 
