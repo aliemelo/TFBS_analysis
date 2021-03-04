@@ -4,6 +4,7 @@ The *in silico* study of regulatory elements depends on the correct screening of
 
 ## 1. Detection of TFBSs with known PWMs
 This approach consists of mapping a set of sequences against a databse of TFBSs, and then identifying the over-represented motifs in these sequences, in order to find those that possibly regulate the corresponding gene.
+
 For this analysis, we use the software [FIMO](https://meme-suite.org/meme/doc/fimo.html) to search for instances of PWMs of plant TFs obtained from the [JASPAR CORE non-redundant collection](http://jaspar.genereg.net/). The promoter region was defined as a stretch of 800 bp upstream of the TSS, and TSSs were predicted using [TSSFinder](https://tssfinder.github.io/).
 To run the script
 
