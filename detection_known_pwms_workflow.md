@@ -3,35 +3,24 @@ In order to execute this workflow, you'll need to have installed:
 1. [bedtools](https://github.com/arq5x/bedtools2)
 2. [TSSFinder](https://github.com/tssfinder/tssfinder.github.io)
 3. [FIMO from the MEME Suite](http://meme-suite.org/doc/fimo.html)
-4. [fasta-get-markov](http://meme-suite.org/doc/fasta-get-markov.html) or [CreateBackgroundModel](http://bioinformatics.intec.ugent.be/MotifSuite/standalones.php) to create the background model
-   * Alternatively, you can provide a previously computed background model (it must be in the MEME background format)
+4. [fasta-get-markov](http://meme-suite.org/doc/fasta-get-markov.html)
+   * Alternatively, you can provide a previously computed background model (it must be in the MEME background format).
 
 You'll also need a file containing your chromossome names and their respective sizes:
 ```bash
 cat <YOURFASTAFILE> | awk '$0 ~ ">" {if (NR > 1) {print c;} c=0;printf substr($0,2,100) "\t"; } $0 !~ ">" {c+=length($0);} END { print c; }' > chrom_size.tsv
 ```
 
-The genome sequence (fasta) and annotation (gff) are also needed. We analysed the following organisms:
-1. *Arabidopsis thaliana* (TAIR10): [genome](https://tinyurl.com/y63nexnj "Ensembl's FTP page") | [gff](https://tinyurl.com/y45ztpdq "Ensembl's FTP page")
-2. *Saccharum spontaneum* AP85-411: [genome and gff](http://www.life.illinois.edu/ming/downloads/Spontaneum_genome/)
-3. *Saccharum* hybrid cultivar SP80-3280: [genome](https://www.ncbi.nlm.nih.gov/nuccore/QPEU01000000) | gff
-
-**Note:** upload the models and scripts to the repository and add links to them.
-
 **Other files:**
 1. Models for TSSFinder:
    * [A. thaliana](resources/TSSFinder_models/athaliana)
    * [O. sativa](resources/TSSFinder_models/osativa)
-2. Bedfile containing the start positions of the target genes
-```bash
-# filter gff file to get only the gene entries
-awk '$3 == "gene" {print}' <GFF_FILE> > genes_entries.gff
+   * Models for different organisms are available in the [TSSFinder download page](https://tssfinder.github.io/download.html)
+2. JASPAR CORE Plants PFMs: [Plants PFMs (non-redundant) single batch file in MEME format](http://jaspar.genereg.net/download/CORE/JASPAR2020_CORE_plants_non-redundant_pfms_meme.txt)
 
-# create a bedfile with the start coordinates of genes
-# this creates a file called <filename>.start.bed
-python3 /projects/aliemelo/resources/scripts/create_start_bed.py -f genes_entries.gff
-```
-3. JASPAR CORE Plants PFMs: [Plants PFMs (non-redundant) single batch file in MEME format](http://jaspar.genereg.net/download/CORE/JASPAR2020_CORE_plants_non-redundant_pfms_meme.txt)
+# 2. Case study: co-expressed genes
+We're gonna apply the workflow to a set of co-expressed genes in *Saccharum* hybrid cultivar SP80-3280. For this, we'll
+
 
 # 2. Preparing your promoter sequences
 Here we defined the promoter as the region of 800 nt upstream of the TSS.
