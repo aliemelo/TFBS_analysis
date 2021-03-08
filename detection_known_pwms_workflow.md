@@ -17,6 +17,12 @@ In order to execute this workflow, you'll need to have installed:
 ```bash
 cat <YOURFASTAFILE> | awk '$0 ~ ">" {if (NR > 1) {print c;} c=0;printf substr($0,2,100) "\t"; } $0 !~ ">" {c+=length($0);} END { print c; }' > chrom_size.tsv
 ```
+5. The following scripts should be placed in the same directory as the `map_motifs.sh` script:
+  * create_start_bed.py
+  * fimo_tsv_to_gff.py
+  * merged_bed_to_csv.py
+  * fimo_prep.py
+  * convert_genomic_position_v2.py
 
 # Case study: co-expressed genes
 We're gonna apply the workflow to [this set of co-expressed genes](test_sample_files/test_sample_list.txt) in *Saccharum* hybrid cultivar SP80-3280. Here we will break down each step of the workflow with its respective command line call. 
@@ -113,7 +119,7 @@ sort -k1,1 -k4,4n fimo.qvalue0.01.tsv_converted_to_gff > ordered.fimo_results.gf
 bedtools merge -i ordered.fimo_results.gff -s -c 9 -o distinct > fimo_results_merged_overlaps.gff
 rm ordered.fimo_results.gff
 ```
-File with merged loci: `fimo_results_merged_overlaps.gff`.
+  * File with merged loci: `fimo_results_merged_overlaps.gff`.
 
 * Get a list of the genes with its corresponding mapped PWMs:
 ```bash
@@ -123,7 +129,7 @@ python3 merged_bed_to_csv.py --bed fimo_results_merged_overlaps.gff
 # make a table with genes names and their corresponding mapped PWMs
 python3 fimo_prep.py --file fimo_results_merged_overlaps.gff.csv --out mapping.results --alt T
 ```
-File with list of mapped PWMs: `mapping.results`.
+  * File with list of mapped PWMs: `mapping.results`.
 
 * The coordinates in the output GFF files are in relation to the input sequences, that is, the promoter sequences used for the scanning step. To convert those coordinates to the where they would be in the chromosome, you can use this script:
 ```bash
@@ -131,7 +137,7 @@ python3 convert_genomic_position_v2.py \
 -f fimo.qvalue0.01.gff \
 --bed /promoters_800nt.bed
 ```
-Output file: `mapping.results`.
+  * Output file: `mapping.results`.
 
 Check the class for each of the mapped PWM:
 ```bash
@@ -139,4 +145,4 @@ cut -f1 fimo.qvalue0.01.tsv | sort | uniq | sed '/^#/d' | sed '/^[[:space:]]*$/d
 
 grep -F -f jaspar_ids jaspar_core_plants_classes.csv > classes
 ```
-Output file: `classes`.
+  * Output file: `classes`.
