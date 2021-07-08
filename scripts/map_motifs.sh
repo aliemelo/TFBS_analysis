@@ -1,6 +1,6 @@
 #!/bin/bash
 
-while getopts i:o:b:g:c:t: flag
+while getopts i:o:b:g:c:f:d: flag
 do
 case "${flag}" in
                 i) genelist=${OPTARG}
@@ -13,14 +13,11 @@ case "${flag}" in
                          ;;
                 c) chrsize=${OPTARG}
                          ;;
-                t) tssmodel=${OPTARG}
+                f) feat=${OPTARG}
                          ;;
                 *) echo "Invalid option: -$flag" ;;
         esac
 done
-
-# get the path where the scripts are located
-script_dir=$(dirname $(readlink -f $0))
 
 # get current directory
 cwd=$(pwd)
@@ -29,18 +26,17 @@ echo "### Creating output directory ###"
 echo ""
 mkdir $cwd/$outfolder
 
-# for scga7 only
 # the mikado genes have a problem with the name, so we need to fix it first
-sed '/^mikado/s/.$//' $genelist | sed '/^mikado/s/.\{6\}/&.scga7/' > $cwd/$outfolder/genelist.corrected
+sed '/^mikado/s/.\{1\}$/.&/' $genelist | sed '/^mikado/s/.\{6\}/&.scga7/' > $cwd/$outfolder/genelist.corrected
 
 # get the annotation for the target genes
 echo "### Getting annotation for the target genes ###"
 echo ""
-grep -F -f $cwd/$outfolder/genelist.corrected $annotation | awk '$3 == "gene" {print}' > $cwd/$outfolder/genes_entries.gff
-python3 $script_dir/create_start_bed.py -f $cwd/$outfolder/genes_entries.gff
+grep -Fw -f $cwd/$outfolder/genelist.corrected $annotation | awk -v var="$feat" '$3 == var {print}' > $cwd/$outfolder/genes_entries.gff
+python3 /projects/aliemelo/resources/scripts/create_start_bed.py -f $cwd/$outfolder/genes_entries.gff
 
 # check which genes don't have a match in the annotation file
-grep -F -f $cwd/$outfolder/genelist.corrected $annotation | awk '$3 == "gene" {print}' | cut -f9 | sed 's/ID=//' | sed 's/;Name=.*//' | sed 's/;Parent=.*//' | sed 's/evm.TU.//' | grep -vFf - $cwd/$outfolder/genelist.corrected > $cwd/$outfolder/unmatched_genes
+grep -Fw -f $cwd/$outfolder/genelist.corrected $annotation | awk -v var="$feat" '$3 == var {print}' | cut -f1 | grep -vFf - $cwd/$outfolder/genelist.corrected > $cwd/$outfolder/unmatched_genes
 
 # if no matches found, stop script
 if ! [ -s $cwd/$outfolder/genes_entries.gff ]; then
@@ -74,7 +70,6 @@ sed 's/;Name=.*//' $cwd/$outfolder/promoters_800nt.fa.tmp.tmp | sed 's/;Parent=.
 mv $cwd/$outfolder/promoters_800nt.fa.tmp.tmp.tmp $cwd/$outfolder/promoters_800nt.fa
 rm $cwd/$outfolder/*tmp*
 
-
 # obtain background model
 echo "### Creating background model ###"
 echo ""
@@ -92,27 +87,23 @@ fimo \
 /projects/aliemelo/resources/databases/JASPAR2018_CORE_plants_non-redundant_pfms_meme.txt \
 $cwd/$outfolder/promoters_800nt.fa > $cwd/$outfolder/log.fimo.txt
 
-# filter results for q-value <= 0.01
+# filter results for q-value <= 0.05
 echo "### Filtering results ###"
 echo ""
-awk '($9 <= 0.01) {print}' $cwd/$outfolder/fimo.out/fimo.tsv > $cwd/$outfolder/fimo.out/fimo.qvalue0.01.tsv
+awk '($9 <= 0.05) {print}' $cwd/$outfolder/fimo.out/fimo.tsv > $cwd/$outfolder/fimo.out/fimo.qvalue0.05.tsv
 
-python3 $script_dir/fimo_tsv_to_gff.py --tsv $cwd/$outfolder/fimo.out/fimo.qvalue0.01.tsv
-sort -k1,1 -k4,4n $cwd/$outfolder/fimo.out/fimo.qvalue0.01.gff > $cwd/$outfolder/fimo.out/ordered.fimo_results.gff
-bedtools merge -i $cwd/$outfolder/fimo.out/ordered.fimo_results.gff -s -c 9 -o distinct > $cwd/$outfolder/fimo.out/fimo.qvalue0.01.merged_overlaps.gff
-python3 $script_dir/merged_bed_to_csv.py --bed $cwd/$outfolder/fimo.out/fimo.qvalue0.01.merged_overlaps.gff
-python3 $script_dir/fimo_prep.py --file $cwd/$outfolder/fimo.out/fimo.qvalue0.01.merged_overlaps.csv --out $cwd/$outfolder/fimo.out/mapping.results --alt T
+python3 /projects/aliemelo/resources/scripts/fimo_tsv_to_gff.py --tsv $cwd/$outfolder/fimo.out/fimo.qvalue0.05.tsv
+sort -k1,1 -k4,4n $cwd/$outfolder/fimo.out/fimo.qvalue0.05.gff > $cwd/$outfolder/fimo.out/ordered.fimo_results.gff
+bedtools merge -i $cwd/$outfolder/fimo.out/ordered.fimo_results.gff -s -c 9 -o distinct -d -6 > $cwd/$outfolder/fimo.out/fimo.qvalue0.05.merged_overlaps.gff
+python3 /projects/aliemelo/resources/scripts/merged_bed_to_csv.py --bed $cwd/$outfolder/fimo.out/fimo.qvalue0.05.merged_overlaps.gff
+python3 /projects/aliemelo/resources/scripts/fimo_prep.py --file $cwd/$outfolder/fimo.out/fimo.qvalue0.05.merged_overlaps.csv --out $cwd/$outfolder/fimo.out/mapping.results --alt T
 
 # remove intermediary files
 rm $cwd/$outfolder/fimo.out/ordered.fimo_results.gff
 
-# convert coordinates
-python3 $script_dir/convert_genomic_position_v2.py \
--f $cwd/$outfolder/fimo.out/fimo.qvalue0.01.gff \
---bed $cwd/$outfolder/promoters_800nt.bed
 
 # check classes of TFs mapped to the target genes
-cut -f1 $cwd/$outfolder/fimo.out/fimo.qvalue0.01.tsv | sort | uniq | sed '/^#/d' | sed '/^[[:space:]]*$/d' > $cwd/$outfolder/fimo.out/jaspar_ids
+cut -f1 $cwd/$outfolder/fimo.out/fimo.qvalue0.05.tsv | sort | uniq | sed '/^#/d' | sed '/^[[:space:]]*$/d' > $cwd/$outfolder/fimo.out/jaspar_ids
 
 grep -F -f $cwd/$outfolder/fimo.out/jaspar_ids /projects/aliemelo/resources/databases/jaspar_core_plants_classes.csv > $cwd/$outfolder/fimo.out/classes
 
