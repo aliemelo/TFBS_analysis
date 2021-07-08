@@ -7,11 +7,11 @@ In order to execute this workflow, you'll need to have installed:
    * Alternatively, you can provide a previously computed background model (it must be in the MEME background format).
 
 **Other files:**
-1. Models for TSSFinder:
+1. Model for TSSFinder:
    * [A. thaliana](resources/TSSFinder_models/athaliana)
-   * [O. sativa](resources/TSSFinder_models/osativa)
    * Models for different organisms are available in the [TSSFinder download page](https://tssfinder.github.io/download.html)
 2. JASPAR CORE Plants PFMs: [Plants PFMs (non-redundant) single batch file in MEME format](http://jaspar.genereg.net/download/CORE/JASPAR2020_CORE_plants_non-redundant_pfms_meme.txt)
+   * We used JASPAR 2018.
 3. *Saccharum* hybrid cultivar SP80-3280: [genome](https://www.ncbi.nlm.nih.gov/nuccore/QPEU01000000) | gff
 4. File containing your chromosomes names and their respective sizes, separated by tab. You can obtain this file by running this command line:
 ```bash
@@ -42,7 +42,7 @@ nohup time tssfinder \
 **Note:** the output is a file called `out.tss.bed`.
 
 ### 1.2 Delimitation of the promoter sequences
-1. Define the promoter coordinates:
+1. Define the promoter coordinates (800 nt upstream of the TSS):
 ```bash
 bedtools flank -s -i out.tss.bed -g chrom_size.tsv -l 800 -r 0 > promoters_800nt.bed
 ```
@@ -82,13 +82,12 @@ mv promoters_800nt.fa.new promoters_800nt.fa
 
 ## 2. Scan promoters for motif occurences
 ### 2.1 Obtain the background model for your sequences
-Here we will be using the fasta-get-markov script from the MEME Suite:
 ```bash
 fasta-get-markov promoters_800nt.fa background_model.meme_format
 ```
 
 ### 2.2 Scan sequences
-We used the JASPAR CORE Plants as the database. We altered the options --max-stored-scores to 500000 and --thresh to 1e-6
+We used the JASPAR 2018 CORE Plants as the database. We altered the options --max-stored-scores to 500000, and --thresh to 1e-6
 ```bash
 nohup time fimo \
 --bfile background_model.meme_format \
@@ -99,21 +98,21 @@ promoters_800nt.fa > log.fimo.txt &
 ```
 
 ## 3. Assess results
-Filter results for q-values <= 0.01:
+Filter results for q-values <= 0.05:
 ```bash
 cd fimo.out/
-awk '($9 <= 0.01) {print}' fimo.tsv > fimo.qvalue0.01.tsv
+awk '($9 <= 0.05) {print}' fimo.tsv > fimo.qvalue0.05.tsv
 ```
-Your final result is the file `fimo.qvalue0.01.tsv`. The next steps are optional, and you are encouraged to explore the results as you see fit.
+Your final result is the file `fimo.qvalue0.05.tsv`. The next steps are optional, and you are encouraged to explore the results as you see fit.
 
 **Optional steps**
 * Many of the mapped PWMs overlap each other, so we can merge those sites into one locus:
 ```bash
 # convert the tsv file into a gff file
-python3 fimo_tsv_to_gff.py --tsv fimo.qvalue0.01.tsv
+python3 fimo_tsv_to_gff.py --tsv fimo.qvalue0.05.tsv
 
 # sort the gff file by chromosome and start position
-sort -k1,1 -k4,4n fimo.qvalue0.01.tsv_converted_to_gff > ordered.fimo_results.gff
+sort -k1,1 -k4,4n fimo.qvalue0.05.tsv_converted_to_gff > ordered.fimo_results.gff
 
 # merge overlapping sites
 bedtools merge -i ordered.fimo_results.gff -s -c 9 -o distinct > fimo_results_merged_overlaps.gff
@@ -121,7 +120,7 @@ rm ordered.fimo_results.gff
 ```
   * File with merged loci: `fimo_results_merged_overlaps.gff`.
 
-* Get a list of the genes with its corresponding mapped PWMs:
+* Get a list of genes with their corresponding mapped PWMs:
 ```bash
 # transform merged gff into a csv file (to be opened as a spreadsheet)
 python3 merged_bed_to_csv.py --bed fimo_results_merged_overlaps.gff
@@ -134,14 +133,14 @@ python3 fimo_prep.py --file fimo_results_merged_overlaps.gff.csv --out mapping.r
 * The coordinates in the output GFF files are in relation to the input sequences, that is, the promoter sequences used for the scanning step. To convert those coordinates to the where they would be in the chromosome, you can use this script:
 ```bash
 python3 convert_genomic_position_v2.py \
--f fimo.qvalue0.01.gff \
+-f fimo.qvalue0.05.gff \
 --bed /promoters_800nt.bed
 ```
   * Output file: `mapping.results`.
 
 Check the class for each of the mapped PWM:
 ```bash
-cut -f1 fimo.qvalue0.01.tsv | sort | uniq | sed '/^#/d' | sed '/^[[:space:]]*$/d' > jaspar_ids
+cut -f1 fimo.qvalue0.05.tsv | sort | uniq | sed '/^#/d' | sed '/^[[:space:]]*$/d' > jaspar_ids
 
 grep -F -f jaspar_ids jaspar_core_plants_classes.csv > classes
 ```
